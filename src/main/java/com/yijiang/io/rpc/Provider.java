@@ -19,6 +19,11 @@ import java.net.InetSocketAddress;
 public class Provider{
 
     public static void startServer(){
+
+        CarImpl car = new CarImpl();
+        Dispatcher dispatcher = new Dispatcher();
+        dispatcher.register(Car.class.getName(),car);
+
         NioEventLoopGroup boss = new NioEventLoopGroup(1);
         NioEventLoopGroup worker = boss;
         ServerBootstrap serverBootstrap = new ServerBootstrap();
@@ -30,7 +35,7 @@ public class Provider{
                         System.out.println("Server accept client port: " + ch.remoteAddress().getPort());
                         ChannelPipeline pipeline = ch.pipeline();
                         pipeline.addLast(new ServerDecode());
-                        pipeline.addLast(new ServerRequestHandler());
+                        pipeline.addLast(new ServerRequestHandler(dispatcher));
                     }
                 }).bind(new InetSocketAddress("localhost", 9090));
         try {

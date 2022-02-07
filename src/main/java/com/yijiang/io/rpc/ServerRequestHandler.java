@@ -5,6 +5,8 @@ import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.sql.Time;
 import java.util.concurrent.TimeUnit;
 
@@ -14,6 +16,12 @@ import java.util.concurrent.TimeUnit;
  * @Description: com.yijiang.io.rpc
  */
 public class ServerRequestHandler extends ChannelInboundHandlerAdapter {
+
+    private Dispatcher dis;
+
+    public ServerRequestHandler(Dispatcher dispatcher) {
+        this.dis = dispatcher;
+    }
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
@@ -26,18 +34,35 @@ public class ServerRequestHandler extends ChannelInboundHandlerAdapter {
         new Runnable() {
             @Override
             public void run() {
-                System.out.println(responsePkg.getContent().getResponseString());
-                String execThreadName = Thread.currentThread().getName();
-                String responseString = "io thread: " + ioThreadName + " exec thread: " + execThreadName + " from args: " + responsePkg.getContent().getArgs()[0];
+                String serviceName = responsePkg.getContent().getInterfaceName();
+                String method = responsePkg.getContent().getMethodName();
+                Object c = dis.get(serviceName);
+                Class<?> clazz = c.getClass();
+                Object res = null;
+                try {
+                    Method m = clazz.getMethod(method, responsePkg.getContent().getParameterTypes());
+                    res = m.invoke(c, responsePkg.getContent().getArgs());
+                } catch (NoSuchMethodException e) {
+                    e.printStackTrace();
+                } catch (IllegalAccessException e) {
+                    e.printStackTrace();
+                } catch (InvocationTargetException e) {
+                    e.printStackTrace();
+                }
+//                System.out.println(responsePkg.getContent().getResponseString());
+//                String execThreadName = Thread.currentThread().getName();
+//                String responseString = "io thread: " + ioThreadName + " exec thread: " + execThreadName + " from args: " + responsePkg.getContent().getArgs()[0];
                 MsgBody responseBody = new MsgBody();
-                responseBody.setResponseString(responseString);
+                responseBody.setResponseString((String) res);
                 byte[] responseBodyBytes = SerDerUtil.serialize(responseBody);
+//                System.out.println("responseBodyBytes.length:" + responseBodyBytes.length);
 
                 MsgHeader responseHead = new MsgHeader();
                 responseHead.setRequestID(responsePkg.getHeader().requestID);
                 responseHead.setProtocol(0x14141424);
                 responseHead.setDataLen(responseBodyBytes.length);
                 byte[] responseHeadBytes = SerDerUtil.serialize(responseHead);
+//                System.out.println("responseHeadBytes.length:" + responseHeadBytes.length);
 
                 ByteBuf byteBuf = PooledByteBufAllocator.DEFAULT.directBuffer(responseHeadBytes.length + responseBodyBytes.length);
                 byteBuf.writeBytes(responseHeadBytes);

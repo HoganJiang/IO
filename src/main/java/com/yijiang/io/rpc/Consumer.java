@@ -28,8 +28,8 @@ public class Consumer {
                 Car car = MyRPC.getByProxy(Car.class);
                 String arg = "bmw" + atomicInteger.incrementAndGet();
                 String ans = car.drive(arg);
-//                System.out.println(ans);
-                System.out.println("client over msg: " + ans + " src arg: " + arg);
+                System.out.println(ans);
+//                System.out.println("client over msg: " + ans + " src arg: " + arg);
             });
         }
 

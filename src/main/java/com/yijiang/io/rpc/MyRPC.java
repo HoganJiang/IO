@@ -74,7 +74,7 @@ public class MyRPC {
                 ByteBuf byteBuf = PooledByteBufAllocator.DEFAULT.directBuffer(headerBytes.length + bodyBytes.length);
                 long requestID = requestHeader.getRequestID();
                 CompletableFuture<String> res = new CompletableFuture<>();
-                ResponseHandler.addCallBack(requestID,new CompletableFuture());
+                ResponseHandler.addCallBack(requestID,res);
                 byteBuf.writeBytes(headerBytes);
                 byteBuf.writeBytes(bodyBytes);
                 ChannelFuture channelFuture = clientChannel.writeAndFlush(byteBuf);

@@ -23,11 +23,9 @@ public class ServerDecode extends ByteToMessageDecoder {
             ByteArrayInputStream in = new ByteArrayInputStream(bytes);
             ObjectInputStream oin = new ObjectInputStream(in);
             MsgHeader header = (MsgHeader) oin.readObject();
-            // DECODE在2个方向都使用
-            // 通信的协议
-            if (buf.readableBytes() >= header.getDataLen()) {
-                // 处理指针
-                buf.readBytes(102); // 移动指针到body开始的位置
+
+            if ((buf.readableBytes() - 102) >= header.getDataLen()) {
+                buf.readBytes(102);
                 byte[] data = new byte[(int) header.getDataLen()];
                 buf.readBytes(data);
                 ByteArrayInputStream din = new ByteArrayInputStream(data);
